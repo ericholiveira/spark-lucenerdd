@@ -16,133 +16,27 @@
  */
 package org.zouzias.spark.lucenerdd.analyzers
 
-import org.apache.lucene.analysis.Analyzer
-import org.apache.lucene.analysis.ar.ArabicAnalyzer
-import org.apache.lucene.analysis.bg.BulgarianAnalyzer
-import org.apache.lucene.analysis.br.BrazilianAnalyzer
-import org.apache.lucene.analysis.ca.CatalanAnalyzer
-import org.apache.lucene.analysis.cjk.CJKAnalyzer
-import org.apache.lucene.analysis.ckb.SoraniAnalyzer
-import org.apache.lucene.analysis.core.WhitespaceAnalyzer
-import org.apache.lucene.analysis.cz.CzechAnalyzer
-import org.apache.lucene.analysis.da.DanishAnalyzer
-import org.apache.lucene.analysis.de.GermanAnalyzer
-import org.apache.lucene.analysis.el.GreekAnalyzer
-import org.apache.lucene.analysis.en.EnglishAnalyzer
-import org.apache.lucene.analysis.es.SpanishAnalyzer
-import org.apache.lucene.analysis.eu.BasqueAnalyzer
-import org.apache.lucene.analysis.fa.PersianAnalyzer
-import org.apache.lucene.analysis.fi.FinnishAnalyzer
-import org.apache.lucene.analysis.fr.FrenchAnalyzer
-import org.apache.lucene.analysis.ga.IrishAnalyzer
-import org.apache.lucene.analysis.gl.GalicianAnalyzer
-import org.apache.lucene.analysis.hi.HindiAnalyzer
-import org.apache.lucene.analysis.hu.HungarianAnalyzer
-import org.apache.lucene.analysis.id.IndonesianAnalyzer
-import org.apache.lucene.analysis.it.ItalianAnalyzer
-import org.apache.lucene.analysis.lt.LithuanianAnalyzer
-import org.apache.lucene.analysis.lv.LatvianAnalyzer
-import org.apache.lucene.analysis.nl.DutchAnalyzer
-import org.apache.lucene.analysis.no.NorwegianAnalyzer
-import org.apache.lucene.analysis.pt.PortugueseAnalyzer
-import org.apache.lucene.analysis.ru.RussianAnalyzer
 import org.apache.lucene.analysis.standard.StandardAnalyzer
-import org.apache.lucene.analysis.tr.TurkishAnalyzer
 import org.zouzias.spark.lucenerdd.config.Configurable
 import org.apache.spark.internal.Logging
 
 /**
- * Lucene Analyzer loader via configuration or via class name
-  *
-  * An analyzer can be loaded by using all the short country codes, i.e.,
-  * en,el,de, etc or using a class name present in the classpath, i.e.,
-  * 'org.apache.lucene.analysis.el.GreekAnalyzer'
-  *
-  * Custom Analyzers can be loaded provided that are present during runtime.
+ * Lucene Analyzer loader via configuration
+ *
+ * An analyzer can be loaded by using all the short country codes, i.e.,
+ * en,el,de, etc or using a class name present in the classpath, i.e.,
+ * 'org.apache.lucene.analysis.el.GreekAnalyzer'
  */
-trait AnalyzerConfigurable extends Configurable
-  with Logging {
-
-  private val IndexAnalyzerConfigKey = "lucenerdd.index.analyzer.name"
-  private val QueryAnalyzerConfigKey = "lucenerdd.query.analyzer.name"
+trait AnalyzerConfigurable extends Configurable with Logging {
 
   /** Get the configured analyzers or fallback to English */
   protected def getOrElseEn(analyzerName: Option[String]): String = analyzerName.getOrElse("en")
 
-  protected val IndexAnalyzerConfigName: Option[String] =
-    if (Config.hasPath(IndexAnalyzerConfigKey)) {
-    Some(Config.getString(IndexAnalyzerConfigKey))} else None
+  protected val IndexAnalyzerConfigName: Option[String] = Some(params.indexAnalyzerName)
+  protected val QueryAnalyzerConfigName: Option[String] = Some(params.queryAnalyzerName)
 
-  protected val QueryAnalyzerConfigName: Option[String] =
-    if (Config.hasPath(QueryAnalyzerConfigKey)) {
-      Some(Config.getString(QueryAnalyzerConfigKey))} else None
-
-  protected def getAnalyzer(analyzerName: Option[String]): Analyzer = {
-    if (analyzerName.isDefined) {
-      analyzerName.get match {
-        case "whitespace" => new WhitespaceAnalyzer()
-        case "ar" => new ArabicAnalyzer()
-        case "bg" => new BulgarianAnalyzer()
-        case "br" => new BrazilianAnalyzer()
-        case "ca" => new CatalanAnalyzer()
-        case "cjk" => new CJKAnalyzer()
-        case "ckb" => new SoraniAnalyzer()
-        case "cz" => new CzechAnalyzer()
-        case "da" => new DanishAnalyzer()
-        case "de" => new GermanAnalyzer()
-        case "el" => new GreekAnalyzer()
-        case "en" => new EnglishAnalyzer()
-        case "es" => new SpanishAnalyzer()
-        case "eu" => new BasqueAnalyzer()
-        case "fa" => new PersianAnalyzer()
-        case "fi" => new FinnishAnalyzer()
-        case "fr" => new FrenchAnalyzer()
-        case "ga" => new IrishAnalyzer()
-        case "gl" => new GalicianAnalyzer()
-        case "hi" => new HindiAnalyzer()
-        case "hu" => new HungarianAnalyzer()
-        case "id" => new IndonesianAnalyzer()
-        case "it" => new ItalianAnalyzer()
-        case "lt" => new LithuanianAnalyzer()
-        case "lv" => new LatvianAnalyzer()
-        case "nl" => new DutchAnalyzer()
-        case "no" => new NorwegianAnalyzer()
-        case "pt" => new PortugueseAnalyzer()
-        case "ru" => new RussianAnalyzer()
-        case "tr" => new TurkishAnalyzer()
-        case otherwise: String =>
-          try {
-            val clazz = loadConstructor[Analyzer](otherwise)
-            clazz
-          }
-          catch {
-            case e: ClassNotFoundException =>
-              logError(s"Class ${otherwise} was not found in classpath. Does the class exist?", e)
-              null
-            case e: ClassCastException =>
-              logError(s"Class ${otherwise} could not be " +
-                s"cast to superclass org.apache.lucene.analysis.Analyzer.", e)
-              null
-            case e: Throwable =>
-              logError(s"Class ${otherwise} could not be used as Analyzer.", e)
-              null
-          }
-      }
-    }
-    else {
-      logInfo("Analyzer name is not defined. Default analyzer is StandardAnalyzer().")
-      new StandardAnalyzer()
-    }
-  }
-
-  /**
-    * Load a Lucene [[Analyzer]] using class name
-    *
-    * @param className The class name of the analyzer to load
-    * @tparam T
-    * @return Returns a Lucene Analyzer
-    */
-  private def loadConstructor[T <: Analyzer](className: String): T = {
+  /** Load custom analyzer using reflection */
+  private def loadConstructor[T <: org.apache.lucene.analysis.Analyzer](className: String): T = {
     val loader = getClass.getClassLoader
     logInfo(s"Loading class ${className} using loader ${loader}")
     val loadedClass: Class[T] = loader.loadClass(className).asInstanceOf[Class[T]]
@@ -150,4 +44,22 @@ trait AnalyzerConfigurable extends Configurable
     constructor.newInstance()
   }
 
+  /** Get analyzer instance from name */
+  protected def getAnalyzer(analyzerName: Option[String]): org.apache.lucene.analysis.Analyzer = {
+    if (analyzerName.isDefined) {
+      try {
+        // Try to load custom analyzer first
+        loadConstructor[org.apache.lucene.analysis.Analyzer](analyzerName.get)
+      }
+      catch {
+        case _: Throwable =>
+          // If custom analyzer fails, use the built-in analyzer from LuceneRDDParams
+          params.getAnalyzerByName(analyzerName.get)
+      }
+    }
+    else {
+      logInfo("Analyzer name is not defined. Default analyzer is StandardAnalyzer().")
+      new StandardAnalyzer()
+    }
+  }
 }

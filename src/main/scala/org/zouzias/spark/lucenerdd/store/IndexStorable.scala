@@ -17,7 +17,6 @@
 package org.zouzias.spark.lucenerdd.store
 
 import java.nio.file.{Files, Path}
-
 import org.apache.lucene.facet.FacetsConfig
 import org.apache.lucene.store._
 import org.zouzias.spark.lucenerdd.config.Configurable
@@ -36,8 +35,6 @@ trait IndexStorable extends Configurable
   with Logging {
 
   protected lazy val FacetsConfig = new FacetsConfig()
-
-  private val IndexStoreKey = "lucenerdd.index.store.mode"
 
   private val tmpJavaDir = System.getProperty("java.io.tmpdir")
 
@@ -61,50 +58,39 @@ trait IndexStorable extends Configurable
    * @return
    */
   protected def storageMode(directoryPath: Path): Directory = {
-    if (Config.hasPath(IndexStoreKey)) {
-      val storageMode = Config.getString(IndexStoreKey)
-
-      storageMode match {
-          // TODO: FIX: Currently there is a single lock instance for each directory.
-          // TODO: Implement better lock handling here
-        case "disk" => {
-          logInfo(s"Config parameter ${IndexStoreKey} is set to 'disk'")
-          logInfo("Lucene index will be storage in disk")
-          logInfo(s"Index disk location ${tmpJavaDir}")
-          // directoryPath.toFile.deleteOnExit() // Delete on exit
-          new MMapDirectory(directoryPath, new SingleInstanceLockFactory)
-        }
-        case ow =>
-          logInfo(s"Config parameter ${IndexStoreKey} is set to ${ow}")
-          logInfo("Lucene index will be storage in memory (default)")
-          logInfo(
-            """
-              Quoting from
-              http://lucene.apache.org/core/7_5_0/core/org/apache/
-              lucene/store/RAMDirectory.html
-
-              A memory-resident Directory implementation. Locking
-              implementation is by default the SingleInstanceLockFactory.
-              Warning: This class is not intended to work with huge indexes.
-              Everything beyond several hundred megabytes will waste resources
-              (GC cycles), because it uses an internal buffer size of 1024 bytes,
-              producing millions of byte[1024] arrays.
-              This class is optimized for small memory-resident indexes.
-              It also has bad concurrency on multithreaded environments.
-
-              It is recommended to materialize large indexes on disk and
-              use MMapDirectory, which is a high-performance directory
-              implementation working directly on the file system cache of
-              the operating system, so copying data to Java heap
-              space is not useful.
-            """.stripMargin)
-          new RAMDirectory()
+    params.indexStoreMode match {
+      case "disk" => {
+        logInfo("Index storage mode is set to 'disk'")
+        logInfo("Lucene index will be stored on disk")
+        logInfo(s"Index disk location ${tmpJavaDir}")
+        new MMapDirectory(directoryPath, new SingleInstanceLockFactory)
       }
-    }
-    else {
-      logInfo(s"Config parameter ${IndexStoreKey} is not set")
-      logInfo("Lucene index will be storage in disk")
-      new MMapDirectory(directoryPath, new SingleInstanceLockFactory)
+      case mode => {
+        logInfo(s"Index storage mode is set to '${mode}'")
+        logInfo("Lucene index will be stored in memory (default)")
+        logInfo(
+          """
+            Quoting from
+            http://lucene.apache.org/core/7_5_0/core/org/apache/
+            lucene/store/RAMDirectory.html
+
+            A memory-resident Directory implementation. Locking
+            implementation is by default the SingleInstanceLockFactory.
+            Warning: This class is not intended to work with huge indexes.
+            Everything beyond several hundred megabytes will waste resources
+            (GC cycles), because it uses an internal buffer size of 1024 bytes,
+            producing millions of byte[1024] arrays.
+            This class is optimized for small memory-resident indexes.
+            It also has bad concurrency on multithreaded environments.
+
+            It is recommended to materialize large indexes on disk and
+            use MMapDirectory, which is a high-performance directory
+            implementation working directly on the file system cache of
+            the operating system, so copying data to Java heap
+            space is not useful.
+          """.stripMargin)
+        new RAMDirectory()
+      }
     }
   }
 

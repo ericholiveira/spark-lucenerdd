@@ -16,31 +16,25 @@
  */
 package org.zouzias.spark.lucenerdd.query
 
-import org.apache.lucene.search.similarities.{BM25Similarity, ClassicSimilarity, Similarity}
+import org.apache.lucene.search.similarities.{ClassicSimilarity, Similarity}
 import org.zouzias.spark.lucenerdd.config.Configurable
-
+import org.apache.spark.internal.Logging
 
 /**
-  * Lucene Similarity loader via configuration
-  */
-trait SimilarityConfigurable extends Configurable {
+ * Lucene Similarity loader via configuration
+ */
+trait SimilarityConfigurable extends Configurable with Logging {
 
-  private val LuceneSimilarity = "lucenerdd.similarity.name"
-
-  protected val LuceneSimilarityConfigValue: Option[String] =
-    if (Config.hasPath(LuceneSimilarity)) {
-      Some(Config.getString(LuceneSimilarity))} else None
+  protected val LuceneSimilarityConfigValue: Option[String] = Some(params.similarityName)
 
   protected def getOrElseClassic(): String = LuceneSimilarityConfigValue.getOrElse("classic")
 
   protected def getSimilarity(similarityName: Option[String]): Similarity = {
     if (similarityName.isDefined) {
-      similarityName.get match {
-        case "bm25" => new BM25Similarity()
-        case _ => new ClassicSimilarity()
-      }
+      params.getSimilarityByName(similarityName.get)
     }
     else {
+      logInfo("Similarity name is not defined. Using ClassicSimilarity.")
       new ClassicSimilarity()
     }
   }

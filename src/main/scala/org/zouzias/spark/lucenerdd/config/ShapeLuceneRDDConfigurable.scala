@@ -18,50 +18,30 @@ package org.zouzias.spark.lucenerdd.config
 
 import org.locationtech.spatial4j.io.ShapeIO
 
+/**
+ * Configuration for ShapeLuceneRDD's spatial functionality
+ */
 trait ShapeLuceneRDDConfigurable extends LuceneRDDConfigurable {
 
-  protected val getPrefixTreeMaxLevel: Int = {
-    if (Config.hasPath("lucenerdd.spatial.prefixtree.maxlevel")) {
-      Config.getInt("lucenerdd.spatial.prefixtree.maxlevel")
-    }
-    else 11
-  }
+  /** Get the maximum level of the prefix tree */
+  protected val getPrefixTreeMaxLevel: Int = params.prefixTreeMaxLevel
 
-  protected val getPrefixTreeName: String = {
-    if (Config.hasPath("lucenerdd.spatial.prefixtree.name")) {
-      Config.getString("lucenerdd.spatial.prefixtree.name")
-    }
-    else "geohash"  // Geohash tree by default
-  }
+  /** Get the prefix tree name (geohash or quad) */
+  protected val getPrefixTreeName: String = params.prefixTreeName
 
-  protected val getPrefixTreeMaxDistErr: Double = {
-    if (Config.hasPath("lucenerdd.spatial.prefixtree.maxDistErr")) {
-      Config.getDouble("lucenerdd.spatial.prefixtree.maxDistErr")
-    }
-    else 1D
-  }
+  /** Get the maximum distance error for the prefix tree */
+  protected val getPrefixTreeMaxDistErr: Double = params.prefixTreeMaxDistErr
 
-  protected val getLocationFieldName: String = {
-    if (Config.hasPath("lucenerdd.spatial.location.field.name")) {
-      Config.getString("lucenerdd.spatial.location.field.name")
-    }
-    else "__location__"
-  }
+  /** Get the name of the location field */
+  protected val getLocationFieldName: String = params.locationFieldName
 
+  /** Get the shape format (GeoJSON, LEGACY, POLY, WKT) */
   protected val getShapeFormat: String = {
-    if (Config.hasPath("lucenerdd.spatial.shape.io.format")) {
-      val format = Config.getString("lucenerdd.spatial.shape.io.format")
-      val availableFormats = Array(ShapeIO.GeoJSON, ShapeIO.LEGACY, ShapeIO.POLY, ShapeIO.WKT)
-      if (availableFormats.contains(format)) format else ShapeIO.WKT
-    }
-    else ShapeIO.WKT
+    val format = params.shapeFormat
+    val availableFormats = Array(ShapeIO.GeoJSON, ShapeIO.LEGACY, ShapeIO.POLY, ShapeIO.WKT)
+    if (availableFormats.contains(format)) format else ShapeIO.WKT
   }
 
-  protected val getShapeLinkerMethod: String = {
-    if (Config.hasPath("lucenerdd.spatial.linker.method ")) {
-      Config.getString("lucenerdd.spatial.linker.method ")
-    }
-    else "collectbroadcast"  // collectbroadcast by default
-  }
+  /** Get the method used for shape linkage */
+  protected val getShapeLinkerMethod: String = params.shapeLinkerMethod
 }
-

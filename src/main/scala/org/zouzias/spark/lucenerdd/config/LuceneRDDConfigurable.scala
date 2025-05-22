@@ -17,98 +17,56 @@
 package org.zouzias.spark.lucenerdd.config
 
 import org.apache.lucene.index.IndexOptions
-import scala.collection.JavaConverters._
 
 /**
  * Configuration for [[org.zouzias.spark.lucenerdd.LuceneRDD]]
  */
 trait LuceneRDDConfigurable extends Configurable {
 
-  protected val MaxDefaultTopKValue: Int = {
-    if (Config.hasPath("lucenerdd.query.topk.default")) {
-      Config.getInt("lucenerdd.query.topk.maxvalue")
-    }
-    else 1000
-  }
+  /** Maximum value for topK queries */
+  protected val MaxDefaultTopKValue: Int = params.maxTopKValue
 
   /** Default value for topK queries */
-  protected val DefaultTopK: Int = {
-    if (Config.hasPath("lucenerdd.query.topk.default")) {
-      Config.getInt("lucenerdd.query.topk.default")
-    }
-    else 10
-  }
+  protected val DefaultTopK: Int = params.defaultTopK
 
-  protected val DefaultFacetNum: Int = {
-    if (Config.hasPath("lucenerdd.query.facet.topk.default")) {
-      Config.getInt("lucenerdd.query.facet.topk.default")
-    }
-    else 10
-  }
+  /** Default value for number of faceted results */
+  protected val DefaultFacetNum: Int = params.defaultFacetNum
 
-  protected val StringFieldsDefaultAnalyzed: Boolean = {
-    if (Config.hasPath("lucenerdd.index.stringfields.analyzed")) {
-      Config.getBoolean("lucenerdd.index.stringfields.analyzed")
-    }
-    else {
-      true
-    }
-  }
+  /** Whether to analyze string fields by default */
+  protected val StringFieldsDefaultAnalyzed: Boolean = params.stringFieldsAnalyzed
 
-  /**
-    * List of string fields *not* to be analyzed
-    */
-  protected val StringFieldsListToBeNotAnalyzed: List[String] = {
-    if (Config.hasPath("lucenerdd.index.stringfields.not_analyzed_list")) {
-      Config.getStringList("lucenerdd.index.stringfields.not_analyzed_list")
-        .asScala.toList
-    }
-    else {
-      List.empty[String]
-    }
-  }
+  /** List of string fields that should not be analyzed */
+  protected val StringFieldsListToBeNotAnalyzed: List[String] = params.nonAnalyzedFields
 
-  protected val StringFieldsStoreTermVector: Boolean = {
-    if (Config.hasPath("lucenerdd.index.stringfields.terms.vectors")) {
-      Config.getBoolean("lucenerdd.index.stringfields.terms.vectors")
-    }
-    else true
-  }
+  /** Whether to store term vectors */
+  protected val StringFieldsStoreTermVector: Boolean = params.storeTermVectors
 
-  protected val StringFieldsStoreTermPositions: Boolean = {
-    if (Config.hasPath("lucenerdd.index.stringfields.terms.positions")) {
-      Config.getBoolean("lucenerdd.index.stringfields.terms.positions")
-    }
-    else true
-  }
+  /** Whether to store term positions */
+  protected val StringFieldsStoreTermPositions: Boolean = params.storeTermPositions
 
-  protected val StringFieldsOmitNorms: Boolean = {
-    if (Config.hasPath("lucenerdd.index.stringfields.terms.omitnorms")) {
-      Config.getBoolean("lucenerdd.index.stringfields.terms.omitnorms")
-    }
-    else false
-  }
+  /** Whether to omit norms */
+  protected val StringFieldsOmitNorms: Boolean = params.omitNorms
 
-  protected val StringFieldsIndexOptions: IndexOptions = {
-    if (Config.hasPath("lucenerdd.index.stringfields.options")) {
-      val indexOptions = Config.getString("lucenerdd.index.stringfields.options")
+  /** Index options configuration */
+  protected val StringFieldsIndexOptions: IndexOptions = params.indexOptions
 
-      indexOptions.toLowerCase match {
-        case "docs" => IndexOptions.DOCS
-        case "docs_and_freqs" => IndexOptions.DOCS_AND_FREQS
-        case "docs_and_freqs_and_positions" => IndexOptions.DOCS_AND_FREQS_AND_POSITIONS
-        case "docs_and_freqs_and_positions_and_offsets" =>
-          IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS
-        case _ => IndexOptions.NONE
-      }
-    }
-    else IndexOptions.DOCS_AND_FREQS_AND_POSITIONS  // Default
-  }
+  /** Method used for record linkage */
+  protected val getLinkerMethod: String = params.linkerMethod
 
-  protected val getLinkerMethod: String = {
-    if (Config.hasPath("lucenerdd.linker.method ")) {
-      Config.getString("lucenerdd.linker.method ")
-    }
-    else "collectbroadcast"  // collectbroadcast by default
-  }
+  /** Name of global analyzer used for indexing */
+  protected val getIndexAnalyzerName: String = params.indexAnalyzerName
+
+  /** Name of global analyzer used for querying */
+  protected val getQueryAnalyzerName: String = params.queryAnalyzerName
+
+  /** Name of Lucene similarity implementation */
+  protected val getSimilarityName: String = params.similarityName
+
+  /** Map of field-specific analyzer names for indexing */
+  protected val getIndexAnalyzerPerFieldNames: Map[String, String] =
+    params.indexAnalyzerPerFieldNames
+
+  /** Map of field-specific analyzer names for querying */
+  protected val getQueryAnalyzerPerFieldNames: Map[String, String] =
+    params.queryAnalyzerPerFieldNames
 }
