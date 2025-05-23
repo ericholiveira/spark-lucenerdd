@@ -60,7 +60,16 @@ private[lucenerdd] abstract class AbstractLuceneRDDPartition[T] extends Serializ
    * @param topK Number of documents to return
    * @return
    */
-  def query(searchString: String, topK: Int): LuceneRDDResponsePartition
+  /**
+   * Generic Lucene Query using QueryParser
+   * @param searchString Lucene query string, i.e., textField:hello*
+   * @param topK Number of documents to return
+   * @param defaultFields Optional array of field names to search in when no field is specified
+   * @return
+   */
+  def query(searchString: String,
+           topK: Int,
+           defaultFields: Option[Array[String]] = None): LuceneRDDResponsePartition
 
 
   /**

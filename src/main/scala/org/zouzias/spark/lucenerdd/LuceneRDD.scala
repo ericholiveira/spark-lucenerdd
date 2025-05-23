@@ -131,8 +131,9 @@ class LuceneRDD[T: ClassTag](protected val partitionsRDD: RDD[AbstractLuceneRDDP
    * @return
    */
   def query(searchString: String,
-            topK: Int = DefaultTopK): LuceneRDDResponse = {
-    partitionMapper(_.query(searchString, topK))
+            topK: Int = DefaultTopK,
+            defaultFields: Option[Array[String]] = None): LuceneRDDResponse = {
+    partitionMapper(_.query(searchString, topK, defaultFields))
   }
 
 

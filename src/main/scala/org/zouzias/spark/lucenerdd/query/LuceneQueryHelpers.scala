@@ -86,10 +86,26 @@ object LuceneQueryHelpers extends Serializable {
    * @param queryAnalyzerPerField Lucene query Analyzers per field
    * @return
    */
-  def parseQueryString(searchString: String, queryAnalyzerPerField: PerFieldAnalyzerWrapper)
-  : Query = {
-    val queryParser = new QueryParser(QueryParserDefaultField, queryAnalyzerPerField)
-    queryParser.parse(searchString)
+  def parseQueryString(searchString: String,
+                      queryAnalyzerPerField: PerFieldAnalyzerWrapper,
+                      defaultFields: Option[Array[String]] = None): Query = {
+    // If no specific field is mentioned in the query and default fields are provided
+    if (defaultFields.isDefined) {
+      import org.apache.lucene.queryparser.classic.MultiFieldQueryParser
+      import org.apache.lucene.search.BooleanClause
+
+      // Create parser with equal boosts (1.0f) for all fields
+      val parser = new MultiFieldQueryParser(
+        defaultFields.get,
+        queryAnalyzerPerField,
+        defaultFields.get.map(field => field -> java.lang.Float.valueOf(1.0f)).toMap.asJava
+      )
+
+      parser.parse(searchString)
+    } else {
+      val queryParser = new QueryParser(QueryParserDefaultField, queryAnalyzerPerField)
+      queryParser.parse(searchString)
+    }
   }
 
   /**
@@ -102,11 +118,12 @@ object LuceneQueryHelpers extends Serializable {
    * @return
    */
   def searchParser(indexSearcher: IndexSearcher,
-                   searchString: String,
-                   topK: Int,
-                   queryAnalyzerPerField: PerFieldAnalyzerWrapper)
+                  searchString: String,
+                  topK: Int,
+                  queryAnalyzerPerField: PerFieldAnalyzerWrapper,
+                  defaultFields: Option[Array[String]] = None)
   : Seq[Row] = {
-    val q = parseQueryString(searchString, queryAnalyzerPerField)
+    val q = parseQueryString(searchString, queryAnalyzerPerField, defaultFields)
     indexSearcher.search(q, topK).scoreDocs.map(SparkScoreDoc(indexSearcher, _).toRow())
   }
 

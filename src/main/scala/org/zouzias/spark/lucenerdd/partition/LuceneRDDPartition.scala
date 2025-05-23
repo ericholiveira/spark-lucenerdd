@@ -154,9 +154,10 @@ private[lucenerdd] class LuceneRDDPartition[T]
   }
 
   override def query(searchString: String,
-                     topK: Int): LuceneRDDResponsePartition = {
+                    topK: Int,
+                    defaultFields: Option[Array[String]] = None): LuceneRDDResponsePartition = {
     val results = LuceneQueryHelpers.searchParser(indexSearcher, searchString, topK,
-      PerFieldQueryAnalyzer())
+      PerFieldQueryAnalyzer(), defaultFields)
 
     LuceneRDDResponsePartition(results.toIterator)
   }
